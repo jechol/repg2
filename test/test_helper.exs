@@ -1,10 +1,3 @@
-exclude =
-  if Node.alive?() do
-    RePG2.NodeManager.set_up_other_node()
+:net_kernel.start([:a, :shortnames])
 
-    []
-  else
-    [distributed: true]
-  end
-
-ExUnit.start(exclude: exclude)
+ExUnit.start()

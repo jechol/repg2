@@ -36,6 +36,8 @@ defmodule RePG2.NodeManager do
   end
 
   def wait_for_other_node_up do
+    IO.puts("ping...")
+
     case :net_adm.ping(other_node()) do
       :pong ->
         :ok
