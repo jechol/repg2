@@ -9,9 +9,9 @@ let
   }) { };
 in nixpkgs.mkShell {
   buildInputs = [
-    beam.erlang.v20_0
-    beam.pkg.v20_0.elixir.v1_8_0
-    beam.pkg.v20_0.rebar3
-    beam.pkg.v20_0.rebar
+    beam.erlang.v22_0
+    beam.pkg.v22_0.elixir.v1_8_0
+    beam.pkg.v22_0.rebar3
+    beam.pkg.v22_0.rebar
   ];
 }
