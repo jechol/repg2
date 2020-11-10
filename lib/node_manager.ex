@@ -54,22 +54,12 @@ defmodule NodeManager do
     rpc_call_other_node(Application, :stop, [:repg2])
   end
 
-  defp reset_node do
+  def reset_node do
     _ = Application.stop(:repg2)
     :ok = Application.start(:repg2)
   end
 
-  defp disconnect_other_node do
-    rpc_call_other_node(__MODULE__, :disconnect, [])
-  end
-
   def kill_other_node do
     :slave.stop(:"b@127.0.0.1")
-  end
-
-  defp disconnect do
-    :ok = Node.stop()
-    Process.sleep(1_000)
-    {:ok, _} = Node.start(:b, :shortnames)
   end
 end

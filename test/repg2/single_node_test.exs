@@ -5,8 +5,7 @@ defmodule RePG2.SingleNodeTest do
   doctest RePG2
 
   setup do
-    Application.stop(:repg2)
-    :ok = Application.start(:repg2)
+    NodeManager.reset_node()
   end
 
   test "initial state" do

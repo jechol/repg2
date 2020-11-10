@@ -46,8 +46,7 @@ defmodule RePG2.MultiNodesTest do
 
     assert_group_membership(:test_group, remote_pid)
 
-    Application.stop(:repg2)
-    :ok = Application.start(:repg2)
+    NodeManager.reset_node()
     Process.sleep(1_000)
 
     assert_group_membership(:test_group, remote_pid)
