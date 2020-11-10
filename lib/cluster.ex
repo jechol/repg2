@@ -1,19 +1,17 @@
 defmodule Cluster do
   def setup do
     # Turn node into a distributed node with the given long name
-    # :net_kernel.start([:"a@127.0.0.1"])
-    :net_kernel.start([:"a@127.0.0.1"])
+    Node.start(:a, :shortnames)
 
     # Allow spawned nodes to fetch all code from this node
     :erl_boot_server.start([])
     allow_boot(to_charlist("127.0.0.1"))
 
-    other_node = :"b@127.0.0.1"
-    spawn_node(other_node)
+    spawn_node(:b)
   end
 
-  defp spawn_node(node_host) do
-    {:ok, node} = :slave.start(to_charlist("127.0.0.1"), node_name(node_host), inet_loader_args())
+  defp spawn_node(name) do
+    {:ok, node} = :slave.start(to_charlist("127.0.0.1"), name, inet_loader_args())
     add_code_paths(node)
     transfer_configuration(node)
     ensure_applications_started(node)

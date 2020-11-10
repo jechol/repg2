@@ -16,14 +16,10 @@ defmodule NodeManager do
   end
 
   defp other_node do
-    "a@" <> hostname = node() |> to_string()
-
-    :"b@#{hostname}"
+    :"b@#{:net_adm.localhost()}"
   end
 
   defp wait_for_other_node_up do
-    IO.puts("ping...")
-
     case :net_adm.ping(other_node()) do
       :pong ->
         :ok
@@ -39,27 +35,31 @@ defmodule NodeManager do
   end
 
   def reset_repg2 do
-    rpc_call_other_node(Application, :stop, [:repg2])
-    _ = Application.stop(:repg2)
-
-    :ok = rpc_call_other_node(Application, :start, [:repg2])
-    :ok = Application.start(:repg2)
+    for cmd <- [:stop, :start] do
+      for cur_node <- [other_node(), node()] do
+        :rpc.call(cur_node, __MODULE__, Application, cmd, [:repg2])
+      end
+    end
   end
 
   def reset_other_node do
     rpc_call_other_node(__MODULE__, :reset_node, [])
   end
 
-  defp stop_repg2_other_node do
-    rpc_call_other_node(Application, :stop, [:repg2])
-  end
-
   def reset_node do
-    _ = Application.stop(:repg2)
+    :ok = Application.stop(:repg2)
     :ok = Application.start(:repg2)
   end
 
   def kill_other_node do
+    Node.monitor(other_node(), true)
     :slave.stop(:"b@127.0.0.1")
+
+    receive do
+      {:nodedown, :"b@127.0.0.1"} -> Process.sleep(1_000)
+    end
+
+    Node.monitor(other_node(), false)
+    :ok
   end
 end
