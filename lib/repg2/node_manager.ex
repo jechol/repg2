@@ -69,6 +69,10 @@ defmodule RePG2.NodeManager do
     rpc_call_other_node(__MODULE__, :disconnect, [])
   end
 
+  def kill_other_node do
+    :slave.stop(:"b@127.0.0.1")
+  end
+
   def disconnect do
     :ok = Node.stop()
     :timer.sleep(1_000)

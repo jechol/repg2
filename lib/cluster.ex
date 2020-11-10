@@ -23,7 +23,6 @@ defmodule Cluster do
     add_code_paths(node)
     transfer_configuration(node)
     ensure_applications_started(node)
-    start_pubsub(node)
     {:ok, node}
   end
 
@@ -32,7 +31,7 @@ defmodule Cluster do
   end
 
   defp inet_loader_args do
-    to_charlist("-loader inet -hosts 127.0.0.1 -setcookie #{:erlang.get_cookie()}")
+    '-loader inet -hosts 127.0.0.1 -setcookie #{:erlang.get_cookie()}'
   end
 
   defp allow_boot(host) do
@@ -59,15 +58,6 @@ defmodule Cluster do
     for {app_name, _, _} <- Application.loaded_applications() do
       rpc(node, Application, :ensure_all_started, [app_name])
     end
-  end
-
-  defp start_pubsub(node) do
-    args = [
-      [{Phoenix.PubSub, name: Phoenix.PubSubTest, pool_size: 1}],
-      [strategy: :one_for_one]
-    ]
-
-    rpc(node, Supervisor, :start_link, args)
   end
 
   defp node_name(node_host) do

@@ -32,10 +32,14 @@ defmodule RePG2.Mixfile do
   end
 
   def application do
+    repg2 =
+      if Mix.env() == :test,
+        do: [{:mod, {RePG2.Application, []}}],
+        else: [{:mod, {RePG2.Application, []}}]
+
     [
-      applications: [:logger],
-      mod: {RePG2.Application, []}
-    ]
+      applications: [:logger]
+    ] ++ repg2
   end
 
   defp deps do

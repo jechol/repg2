@@ -4,6 +4,7 @@ defmodule RePG2.Application do
   use Application
 
   def start(_type, _args) do
+    IO.puts("starting RePg2................")
     import Supervisor.Spec, warn: false
 
     children = [

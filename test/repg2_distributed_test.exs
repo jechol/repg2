@@ -67,22 +67,6 @@ defmodule RePG2DistributedTest do
     assert_group_membership(:test_group, pid, false)
   end
 
-  test "join pid from disconnected node" do
-    :ok = RePG2.create(:test_group)
-
-    pid = NodeManager.spawn_proc_on_other_node()
-
-    NodeManager.disconnect_other_node()
-
-    :timer.sleep(500)
-
-    assert RePG2.join(:test_group, pid) == :ok
-
-    :timer.sleep(1_000)
-
-    assert_no_group_member(:test_group)
-  end
-
   defp assert_group_membership(name, pid, pid_is_local) do
     assert RePG2.get_members(name) == [pid]
 
