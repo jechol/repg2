@@ -6,7 +6,6 @@ defmodule RePG2DistributedTest do
   alias RePG2.NodeManager
 
   @moduletag :capture_log
-  @moduletag :distributed
 
   setup do
     NodeManager.reset_repg2()
@@ -36,7 +35,7 @@ defmodule RePG2DistributedTest do
 
     NodeManager.reset_other_node()
     # Wait for newly created remote pg2 to sync
-    :timer.sleep(1_000)
+    Process.sleep(1_000)
 
     assert_group_membership(:test_group, self())
   end
@@ -51,7 +50,7 @@ defmodule RePG2DistributedTest do
 
     Application.stop(:repg2)
     :ok = Application.start(:repg2)
-    :timer.sleep(1_000)
+    Process.sleep(1_000)
 
     assert_group_membership(:test_group, remote_pid)
   end

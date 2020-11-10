@@ -16,7 +16,7 @@ defmodule RePG2.NodeManager do
   end
 
   def receive_forever do
-    :timer.sleep(:infinity)
+    Process.sleep(:infinity)
 
     :ok
   end
@@ -35,7 +35,7 @@ defmodule RePG2.NodeManager do
         :ok
 
       :pang ->
-        :timer.sleep(1_000)
+        Process.sleep(1_000)
         wait_for_other_node_up()
     end
   end
@@ -75,7 +75,7 @@ defmodule RePG2.NodeManager do
 
   def disconnect do
     :ok = Node.stop()
-    :timer.sleep(1_000)
+    Process.sleep(1_000)
     {:ok, _} = Node.start(:b, :shortnames)
   end
 end

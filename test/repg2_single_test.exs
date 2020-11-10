@@ -57,7 +57,7 @@ defmodule RePG2Test do
 
     other_pid =
       spawn_link(fn ->
-        :timer.sleep(:infinity)
+        Process.sleep(:infinity)
       end)
 
     :ok = RePG2.create(:test_group)
