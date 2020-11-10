@@ -2,7 +2,7 @@ defmodule RePG2.NodeManager do
   @moduledoc false
 
   def set_up_other_node do
-    Phoenix.PubSub.Cluster.setup()
+    Cluster.setup()
 
     System.at_exit(fn _status_code ->
       :rpc.call(other_node(), :init, :stop, [])
