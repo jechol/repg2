@@ -7,6 +7,7 @@ defmodule RePG2.MultiNodesTest do
 
   setup do
     NodeManager.reset_repg2()
+    :ok
   end
 
   test "nodes share groups" do

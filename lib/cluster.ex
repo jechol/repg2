@@ -5,13 +5,13 @@ defmodule Cluster do
 
     # Allow spawned nodes to fetch all code from this node
     :erl_boot_server.start([])
-    allow_boot(to_charlist("127.0.0.1"))
+    allow_boot(:net_adm.localhost())
 
     spawn_node(:b)
   end
 
   defp spawn_node(name) do
-    {:ok, node} = :slave.start(to_charlist("127.0.0.1"), name, inet_loader_args())
+    {:ok, node} = :slave.start(:net_adm.localhost(), name, inet_loader_args())
     add_code_paths(node)
     transfer_configuration(node)
     ensure_applications_started(node)
@@ -27,8 +27,8 @@ defmodule Cluster do
   end
 
   defp allow_boot(host) do
-    {:ok, ipv4} = :inet.parse_ipv4_address(host)
-    :erl_boot_server.add_slave(ipv4)
+    # {:ok, ipv4} = :inet.parse_ipv4_address(host)
+    :erl_boot_server.add_slave(host)
   end
 
   defp add_code_paths(node) do

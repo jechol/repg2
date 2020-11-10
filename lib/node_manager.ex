@@ -37,9 +37,17 @@ defmodule NodeManager do
   def reset_repg2 do
     for cmd <- [:stop, :start] do
       for cur_node <- [other_node(), node()] do
-        :rpc.call(cur_node, __MODULE__, Application, cmd, [:repg2])
+        :rpc.call(cur_node, Application, cmd, [:repg2])
       end
     end
+
+    :ok
+
+    # Node.list() |> IO.inspect()
+    # :rpc.call(other_node, Application, :stop, [:repg2])
+    # :rpc.call(node, __MODULE__, Application, :stop, [:repg2])
+    # :rpc.call(other_node, __MODULE__, Application, :start, [:repg2])
+    # :rpc.call(node, __MODULE__, Application, :start, [:repg2])
   end
 
   def reset_other_node do
@@ -53,10 +61,11 @@ defmodule NodeManager do
 
   def kill_other_node do
     Node.monitor(other_node(), true)
-    :slave.stop(:"b@127.0.0.1")
+    :slave.stop(other_node)
+    other = other_node
 
     receive do
-      {:nodedown, :"b@127.0.0.1"} -> Process.sleep(1_000)
+      {:nodedown, ^other} -> Process.sleep(1_000)
     end
 
     Node.monitor(other_node(), false)

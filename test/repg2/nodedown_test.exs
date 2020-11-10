@@ -7,6 +7,7 @@ defmodule RePG2.NodeDownTest do
 
   setup do
     NodeManager.reset_repg2()
+    :ok
   end
 
   test "join remote_pid from already dead node to local pg2" do
