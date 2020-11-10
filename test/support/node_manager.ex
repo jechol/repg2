@@ -2,21 +2,13 @@ defmodule RePG2.NodeManager do
   @moduledoc false
 
   def set_up_other_node do
-    if :net_adm.ping(other_node()) != :pong do
-      {:ok, _} =
-        Task.start_link(fn ->
-          System.cmd("mix", ["run", "--no-halt", "-e", "Node.start(:b, :shortnames)"],
-            env: %{"MIX_ENV" => "test"}
-          )
-        end)
+    Phoenix.PubSub.Cluster.setup()
 
-      System.at_exit(fn _status_code ->
-        wait_for_other_node_up()
-        :rpc.call(other_node(), :init, :stop, [])
-      end)
+    System.at_exit(fn _status_code ->
+      :rpc.call(other_node(), :init, :stop, [])
+    end)
 
-      wait_for_other_node_up()
-    end
+    wait_for_other_node_up()
   end
 
   def spawn_proc_on_other_node do
