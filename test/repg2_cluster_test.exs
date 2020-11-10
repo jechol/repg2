@@ -14,83 +14,72 @@ defmodule RePG2DistributedTest do
 
   test "nodes share groups" do
     :ok = RePG2.create(:test_group)
+    :ok = RePG2.join(:test_group, self())
+    assert_group_membership(:test_group, self())
 
-    assert RePG2.join(:test_group, self()) == :ok
+    remote_pid = NodeManager.spawn_proc_on_other_node()
+    :ok = NodeManager.rpc_call_other_node(RePG2, :create, [:test_group2])
+    :ok = NodeManager.rpc_call_other_node(RePG2, :join, [:test_group2, remote_pid])
+    assert_group_membership(:test_group2, remote_pid)
 
-    assert_group_membership(:test_group, self(), true)
-
-    pid = NodeManager.spawn_proc_on_other_node()
-
-    assert NodeManager.rpc_call_other_node(RePG2, :create, [:test_group2]) == :ok
-
-    assert NodeManager.rpc_call_other_node(RePG2, :join, [:test_group2, pid]) == :ok
-
-    assert_group_membership(:test_group2, pid, false)
-
-    assert RePG2.leave(:test_group, self()) == :ok
-
+    :ok = RePG2.leave(:test_group, self())
     assert_no_group_member(:test_group)
 
-    assert NodeManager.rpc_call_other_node(RePG2, :leave, [:test_group2, pid]) == :ok
-
+    :ok = NodeManager.rpc_call_other_node(RePG2, :leave, [:test_group2, remote_pid])
     assert_no_group_member(:test_group2)
   end
 
-  test "exchange1" do
+  test "reset remote" do
     :ok = RePG2.create(:test_group)
-
-    assert RePG2.join(:test_group, self()) == :ok
-
-    assert_group_membership(:test_group, self(), true)
+    :ok = RePG2.join(:test_group, self())
+    assert_group_membership(:test_group, self())
 
     NodeManager.reset_other_node()
-
+    # Wait for newly created remote pg2 to sync
     :timer.sleep(1_000)
 
-    assert_group_membership(:test_group, self(), true)
+    assert_group_membership(:test_group, self())
   end
 
-  test "exchange2" do
-    pid = NodeManager.spawn_proc_on_other_node()
+  test "reset local" do
+    remote_pid = NodeManager.spawn_proc_on_other_node()
 
-    assert NodeManager.rpc_call_other_node(RePG2, :create, [:test_group]) == :ok
+    :ok = NodeManager.rpc_call_other_node(RePG2, :create, [:test_group])
+    :ok = NodeManager.rpc_call_other_node(RePG2, :join, [:test_group, remote_pid])
 
-    assert NodeManager.rpc_call_other_node(RePG2, :join, [:test_group, pid]) == :ok
-
-    assert_group_membership(:test_group, pid, false)
+    assert_group_membership(:test_group, remote_pid)
 
     Application.stop(:repg2)
     :ok = Application.start(:repg2)
-
     :timer.sleep(1_000)
 
-    assert_group_membership(:test_group, pid, false)
+    assert_group_membership(:test_group, remote_pid)
   end
 
-  defp assert_group_membership(name, pid, pid_is_local) do
+  defp assert_group_membership(name, pid) do
+    this_node = node()
+
+    {local_pid, remote_pid} =
+      case node(pid) do
+        ^this_node -> {[pid], []}
+        _ -> {[], [pid]}
+      end
+
     assert RePG2.get_members(name) == [pid]
-
-    assert RePG2.get_local_members(name) == if(pid_is_local, do: [pid], else: [])
-
+    assert RePG2.get_local_members(name) == local_pid
     assert RePG2.get_closest_pid(name) == pid
 
     assert NodeManager.rpc_call_other_node(RePG2, :get_members, [name]) == [pid]
-
-    assert NodeManager.rpc_call_other_node(RePG2, :get_local_members, [name]) ==
-             if(pid_is_local, do: [], else: [pid])
-
+    assert NodeManager.rpc_call_other_node(RePG2, :get_local_members, [name]) == remote_pid
     assert NodeManager.rpc_call_other_node(RePG2, :get_closest_pid, [name]) == pid
   end
 
   defp assert_no_group_member(name) do
     assert RePG2.get_members(name) == []
-
     assert RePG2.get_local_members(name) == []
-
     assert RePG2.get_closest_pid(name) == {:error, {:no_process, name}}
 
     assert NodeManager.rpc_call_other_node(RePG2, :get_members, [name]) == []
-
     assert NodeManager.rpc_call_other_node(RePG2, :get_local_members, [name]) == []
 
     assert NodeManager.rpc_call_other_node(RePG2, :get_closest_pid, [name]) ==
