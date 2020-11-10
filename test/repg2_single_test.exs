@@ -7,8 +7,6 @@ defmodule RePG2Test do
   @moduletag :capture_log
 
   setup do
-    RePG2.NodeManager.stop_repg2_other_node()
-
     Application.stop(:repg2)
     :ok = Application.start(:repg2)
   end

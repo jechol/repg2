@@ -12,22 +12,16 @@ defmodule RePG2.NodeManager do
   end
 
   def spawn_proc_on_other_node do
-    Node.spawn(other_node(), __MODULE__, :receive_forever, [])
+    Node.spawn(other_node(), Process, :sleep, [:infinity])
   end
 
-  def receive_forever do
-    Process.sleep(:infinity)
-
-    :ok
-  end
-
-  def other_node do
+  defp other_node do
     "a@" <> hostname = node() |> to_string()
 
     :"b@#{hostname}"
   end
 
-  def wait_for_other_node_up do
+  defp wait_for_other_node_up do
     IO.puts("ping...")
 
     case :net_adm.ping(other_node()) do
@@ -56,16 +50,16 @@ defmodule RePG2.NodeManager do
     rpc_call_other_node(__MODULE__, :reset_node, [])
   end
 
-  def stop_repg2_other_node do
+  defp stop_repg2_other_node do
     rpc_call_other_node(Application, :stop, [:repg2])
   end
 
-  def reset_node do
+  defp reset_node do
     _ = Application.stop(:repg2)
     :ok = Application.start(:repg2)
   end
 
-  def disconnect_other_node do
+  defp disconnect_other_node do
     rpc_call_other_node(__MODULE__, :disconnect, [])
   end
 
@@ -73,7 +67,7 @@ defmodule RePG2.NodeManager do
     :slave.stop(:"b@127.0.0.1")
   end
 
-  def disconnect do
+  defp disconnect do
     :ok = Node.stop()
     Process.sleep(1_000)
     {:ok, _} = Node.start(:b, :shortnames)

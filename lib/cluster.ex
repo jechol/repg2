@@ -12,12 +12,6 @@ defmodule Cluster do
     spawn_node(other_node)
   end
 
-  def hello() do
-    IO.puts("hello world")
-
-    :foo
-  end
-
   defp spawn_node(node_host) do
     {:ok, node} = :slave.start(to_charlist("127.0.0.1"), node_name(node_host), inet_loader_args())
     add_code_paths(node)
