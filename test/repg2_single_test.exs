@@ -18,75 +18,57 @@ defmodule RePG2Test do
   end
 
   test "create group" do
-    assert RePG2.create(:test_group) == :ok
+    :ok = RePG2.create(:test_group)
 
     assert RePG2.which_groups() == [:test_group]
   end
 
   test "delete group" do
-    RePG2.create(:test_group)
-
-    assert RePG2.delete(:test_group) == :ok
+    :ok = RePG2.create(:test_group)
+    :ok = RePG2.delete(:test_group)
 
     assert RePG2.which_groups() == []
   end
 
   test "join group" do
     :ok = RePG2.create(:test_group)
-
-    assert RePG2.join(:test_group, self()) == :ok
+    :ok = RePG2.join(:test_group, self())
 
     assert RePG2.get_members(:test_group) == [self()]
-
     assert RePG2.get_local_members(:test_group) == [self()]
-
     assert RePG2.get_closest_pid(:test_group) == self()
   end
 
   test "leave group" do
     :ok = RePG2.create(:test_group)
 
-    assert RePG2.join(:test_group, self()) == :ok
-
-    assert RePG2.get_members(:test_group) == [self()]
-
-    assert RePG2.get_local_members(:test_group) == [self()]
-
-    assert RePG2.get_closest_pid(:test_group) == self()
-
-    assert RePG2.leave(:test_group, self()) == :ok
+    :ok = RePG2.join(:test_group, self())
+    :ok = RePG2.leave(:test_group, self())
 
     assert RePG2.get_members(:test_group) == []
-
     assert RePG2.get_local_members(:test_group) == []
-
     assert RePG2.get_closest_pid(:test_group) == {:error, {:no_process, :test_group}}
   end
 
   test "get closest pid returns random member" do
-    :rand.seed(:exsplus, {0, 0, 0})
+    :rand.seed(:exsplus, {0, 0, 1})
 
     assert RePG2.get_closest_pid(:test_group) == {:error, {:no_such_group, :test_group}}
-
-    :ok = RePG2.create(:test_group)
 
     other_pid =
       spawn_link(fn ->
         :timer.sleep(:infinity)
       end)
 
-    assert RePG2.join(:test_group, self()) == :ok
-
-    assert RePG2.join(:test_group, other_pid) == :ok
+    :ok = RePG2.create(:test_group)
+    :ok = RePG2.join(:test_group, self())
+    :ok = RePG2.join(:test_group, other_pid)
 
     assert RePG2.get_closest_pid(:test_group) == self()
-
     assert RePG2.get_closest_pid(:test_group) == other_pid
   end
 
   test "member dies" do
-    :ok = RePG2.create(:test_group)
-
     other_pid =
       spawn_link(fn ->
         receive do
@@ -94,13 +76,14 @@ defmodule RePG2Test do
         end
       end)
 
-    assert RePG2.join(:test_group, other_pid) == :ok
+    :ok = RePG2.create(:test_group)
+    :ok = RePG2.join(:test_group, other_pid)
 
     assert RePG2.get_closest_pid(:test_group) == other_pid
 
     send(other_pid, :exit)
-
-    :timer.sleep(500)
+    # We should wait enough for pg2 to process 'DOWN'
+    Process.sleep(100)
 
     assert RePG2.get_closest_pid(:test_group) == {:error, {:no_process, :test_group}}
   end
