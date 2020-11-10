@@ -1,11 +1,9 @@
-defmodule RePG2SplitTest do
+defmodule RePG2.NodeDownTest do
   @moduledoc false
 
   use ExUnit.Case
 
-  alias RePG2.NodeManager
-
-  @moduletag :capture_log
+  alias NodeManager
 
   setup do
     NodeManager.reset_repg2()

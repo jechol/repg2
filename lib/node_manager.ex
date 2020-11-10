@@ -1,4 +1,4 @@
-defmodule RePG2.NodeManager do
+defmodule NodeManager do
   @moduledoc false
 
   def set_up_other_node do

@@ -1,10 +1,8 @@
-defmodule RePG2Test do
+defmodule RePG2.SingleNodeTest do
   @moduledoc false
 
   use ExUnit.Case
   doctest RePG2
-
-  @moduletag :capture_log
 
   setup do
     Application.stop(:repg2)
