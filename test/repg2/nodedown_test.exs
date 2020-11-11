@@ -6,7 +6,7 @@ defmodule RePG2.NodeDownTest do
   alias NodeManager
 
   setup do
-    NodeManager.reset_repg2()
+    NodeManager.reset_cluster()
     :ok
   end
 
@@ -15,7 +15,7 @@ defmodule RePG2.NodeDownTest do
 
     remote_pid = NodeManager.spawn_proc_on_other_node()
 
-    :ok = NodeManager.kill_other_node()
+    :ok = Cluster.stop_other_node()
     :ok = RePG2.join(:test_group, remote_pid)
 
     Process.sleep(1_000)

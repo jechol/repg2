@@ -1,62 +1,107 @@
 defmodule Cluster do
-  def setup do
-    # Turn node into a distributed node with the given long name
-    Node.start(:a, :shortnames)
+  @this_name :foo
+  @other_name :bar
 
-    # Allow spawned nodes to fetch all code from this node
-    :erl_boot_server.start([])
-    allow_boot(:net_adm.localhost())
-
-    spawn_node(:b)
+  def ensure_other_node_started() do
+    if other_node() == nil do
+      start_other_node()
+    end
   end
 
-  defp spawn_node(name) do
-    {:ok, node} = :slave.start(:net_adm.localhost(), name, inet_loader_args())
-    add_code_paths(node)
-    transfer_configuration(node)
-    ensure_applications_started(node)
-    {:ok, node}
+  def start_other_node() do
+    # Turn node into a distributed node
+    {:ok, _pid} = Node.start(@this_name, :shortnames)
+
+    # Allow other nodes to fetch code from this node
+    {:ok, _pid} = allow_boot()
+
+    # Spawn other node
+    spawn_other_node()
   end
 
-  defp rpc(node, module, function, args) do
-    :rpc.block_call(node, module, function, args)
+  def rpc_other_node(m, f, a) do
+    :rpc.block_call(other_node(), m, f, a)
+  end
+
+  def stop_other_node() do
+    case other_node() do
+      nil ->
+        :ok
+
+      other ->
+        Node.monitor(other, true)
+        :slave.stop(other)
+
+        :ok =
+          receive do
+            {:nodedown, ^other} ->
+              :ok
+          end
+    end
+  end
+
+  def other_node do
+    case Node.list() do
+      [] -> nil
+      [other] -> other
+    end
+  end
+
+  # Private
+
+  defp spawn_other_node() do
+    {:ok, node} = :slave.start(:net_adm.localhost(), @other_name, inet_loader_args())
+
+    :ok = add_code_paths(node)
+    :ok = transfer_configuration(node)
+    :ok = ensure_applications_started(node)
+    :ok = wait_for_other_node_up(node)
+    node
   end
 
   defp inet_loader_args do
     '-loader inet -hosts 127.0.0.1 -setcookie #{:erlang.get_cookie()}'
   end
 
-  defp allow_boot(host) do
-    # {:ok, ipv4} = :inet.parse_ipv4_address(host)
-    :erl_boot_server.add_slave(host)
+  defp allow_boot() do
+    localhost = :net_adm.localhost()
+
+    {:ok, _pid} = :erl_boot_server.start([localhost])
   end
 
   defp add_code_paths(node) do
-    rpc(node, :code, :add_paths, [:code.get_path()])
+    :ok = :rpc.block_call(node, :code, :add_paths, [:code.get_path()])
   end
 
   defp transfer_configuration(node) do
     for {app_name, _, _} <- Application.loaded_applications() do
       for {key, val} <- Application.get_all_env(app_name) do
-        rpc(node, Application, :put_env, [app_name, key, val])
+        :ok = :rpc.block_call(node, Application, :put_env, [app_name, key, val])
       end
     end
+
+    :ok
   end
 
   defp ensure_applications_started(node) do
-    rpc(node, Application, :ensure_all_started, [:mix])
-    rpc(node, Mix, :env, [Mix.env()])
+    {:ok, _} = :rpc.block_call(node, Application, :ensure_all_started, [:mix])
+    :ok = :rpc.block_call(node, Mix, :env, [Mix.env()])
 
     for {app_name, _, _} <- Application.loaded_applications() do
-      rpc(node, Application, :ensure_all_started, [app_name])
+      {:ok, _} = :rpc.block_call(node, Application, :ensure_all_started, [app_name])
     end
+
+    :ok
   end
 
-  defp node_name(node_host) do
-    node_host
-    |> to_string
-    |> String.split("@")
-    |> Enum.at(0)
-    |> String.to_atom()
+  defp wait_for_other_node_up(node) do
+    case :net_adm.ping(node) do
+      :pong ->
+        :ok
+
+      :pang ->
+        Process.sleep(1_000)
+        wait_for_other_node_up(node)
+    end
   end
 end

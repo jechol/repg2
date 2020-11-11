@@ -1,74 +1,26 @@
 defmodule NodeManager do
   @moduledoc false
 
-  def set_up_other_node do
-    Cluster.setup()
-
-    System.at_exit(fn _status_code ->
-      :rpc.call(other_node(), :init, :stop, [])
-    end)
-
-    wait_for_other_node_up()
-  end
-
   def spawn_proc_on_other_node do
-    Node.spawn(other_node(), Process, :sleep, [:infinity])
+    _pid = Node.spawn(Cluster.other_node(), Process, :sleep, [:infinity])
   end
 
-  defp other_node do
-    :"b@#{:net_adm.localhost()}"
-  end
-
-  defp wait_for_other_node_up do
-    case :net_adm.ping(other_node()) do
-      :pong ->
-        :ok
-
-      :pang ->
-        Process.sleep(1_000)
-        wait_for_other_node_up()
-    end
-  end
-
-  def rpc_call_other_node(module, function, args) do
-    :rpc.call(other_node(), module, function, args)
-  end
-
-  def reset_repg2 do
+  def reset_cluster() do
     for cmd <- [:stop, :start] do
-      for cur_node <- [other_node(), node()] do
+      for cur_node <- [node(), Cluster.other_node()] do
         :rpc.call(cur_node, Application, cmd, [:repg2])
       end
     end
 
     :ok
-
-    # Node.list() |> IO.inspect()
-    # :rpc.call(other_node, Application, :stop, [:repg2])
-    # :rpc.call(node, __MODULE__, Application, :stop, [:repg2])
-    # :rpc.call(other_node, __MODULE__, Application, :start, [:repg2])
-    # :rpc.call(node, __MODULE__, Application, :start, [:repg2])
   end
 
-  def reset_other_node do
-    rpc_call_other_node(__MODULE__, :reset_node, [])
+  def reset_other_node() do
+    Cluster.rpc_other_node(__MODULE__, :reset_this_node, [])
   end
 
-  def reset_node do
+  def reset_this_node() do
     :ok = Application.stop(:repg2)
     :ok = Application.start(:repg2)
-  end
-
-  def kill_other_node do
-    Node.monitor(other_node(), true)
-    :slave.stop(other_node)
-    other = other_node
-
-    receive do
-      {:nodedown, ^other} -> Process.sleep(1_000)
-    end
-
-    Node.monitor(other_node(), false)
-    :ok
   end
 end

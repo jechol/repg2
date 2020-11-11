@@ -3,10 +3,9 @@ defmodule RePG2.MultiNodesTest do
 
   use ExUnit.Case
 
-  alias NodeManager
-
   setup do
-    NodeManager.reset_repg2()
+    Cluster.ensure_other_node_started()
+    NodeManager.reset_cluster()
     :ok
   end
 
@@ -16,14 +15,14 @@ defmodule RePG2.MultiNodesTest do
     assert_group_membership(:test_group, self())
 
     remote_pid = NodeManager.spawn_proc_on_other_node()
-    :ok = NodeManager.rpc_call_other_node(RePG2, :create, [:test_group2])
-    :ok = NodeManager.rpc_call_other_node(RePG2, :join, [:test_group2, remote_pid])
+    :ok = Cluster.rpc_other_node(RePG2, :create, [:test_group2])
+    :ok = Cluster.rpc_other_node(RePG2, :join, [:test_group2, remote_pid])
     assert_group_membership(:test_group2, remote_pid)
 
     :ok = RePG2.leave(:test_group, self())
     assert_no_group_member(:test_group)
 
-    :ok = NodeManager.rpc_call_other_node(RePG2, :leave, [:test_group2, remote_pid])
+    :ok = Cluster.rpc_other_node(RePG2, :leave, [:test_group2, remote_pid])
     assert_no_group_member(:test_group2)
   end
 
@@ -42,12 +41,12 @@ defmodule RePG2.MultiNodesTest do
   test "reset local" do
     remote_pid = NodeManager.spawn_proc_on_other_node()
 
-    :ok = NodeManager.rpc_call_other_node(RePG2, :create, [:test_group])
-    :ok = NodeManager.rpc_call_other_node(RePG2, :join, [:test_group, remote_pid])
+    :ok = Cluster.rpc_other_node(RePG2, :create, [:test_group])
+    :ok = Cluster.rpc_other_node(RePG2, :join, [:test_group, remote_pid])
 
     assert_group_membership(:test_group, remote_pid)
 
-    NodeManager.reset_node()
+    NodeManager.reset_this_node()
     Process.sleep(1_000)
 
     assert_group_membership(:test_group, remote_pid)
@@ -66,9 +65,9 @@ defmodule RePG2.MultiNodesTest do
     assert RePG2.get_local_members(name) == local_pid
     assert RePG2.get_closest_pid(name) == pid
 
-    assert NodeManager.rpc_call_other_node(RePG2, :get_members, [name]) == [pid]
-    assert NodeManager.rpc_call_other_node(RePG2, :get_local_members, [name]) == remote_pid
-    assert NodeManager.rpc_call_other_node(RePG2, :get_closest_pid, [name]) == pid
+    assert Cluster.rpc_other_node(RePG2, :get_members, [name]) == [pid]
+    assert Cluster.rpc_other_node(RePG2, :get_local_members, [name]) == remote_pid
+    assert Cluster.rpc_other_node(RePG2, :get_closest_pid, [name]) == pid
   end
 
   defp assert_no_group_member(name) do
@@ -76,10 +75,10 @@ defmodule RePG2.MultiNodesTest do
     assert RePG2.get_local_members(name) == []
     assert RePG2.get_closest_pid(name) == {:error, {:no_process, name}}
 
-    assert NodeManager.rpc_call_other_node(RePG2, :get_members, [name]) == []
-    assert NodeManager.rpc_call_other_node(RePG2, :get_local_members, [name]) == []
+    assert Cluster.rpc_other_node(RePG2, :get_members, [name]) == []
+    assert Cluster.rpc_other_node(RePG2, :get_local_members, [name]) == []
 
-    assert NodeManager.rpc_call_other_node(RePG2, :get_closest_pid, [name]) ==
+    assert Cluster.rpc_other_node(RePG2, :get_closest_pid, [name]) ==
              {:error, {:no_process, name}}
   end
 end
