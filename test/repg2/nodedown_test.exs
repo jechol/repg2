@@ -3,17 +3,17 @@ defmodule RePG2.NodeDownTest do
 
   use ExUnit.Case
 
-  alias NodeManager
+  alias ClusterUtil
 
   setup do
-    NodeManager.reset_cluster()
+    ClusterUtil.restart_cluster()
     :ok
   end
 
   test "join remote_pid from already dead node to local pg2" do
     :ok = RePG2.create(:test_group)
 
-    remote_pid = NodeManager.spawn_proc_on_other_node()
+    remote_pid = ClusterUtil.spawn_on_other_node()
 
     :ok = Cluster.stop_other_node()
     :ok = RePG2.join(:test_group, remote_pid)
