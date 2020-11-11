@@ -5,7 +5,7 @@ defmodule RePG2.MultiNodesTest do
 
   setup do
     Cluster.ensure_other_node_started()
-    ClusterUtil.restart_cluster()
+    ClusterUtil.restart_cluster(:repg2)
     :ok
   end
 
@@ -31,7 +31,7 @@ defmodule RePG2.MultiNodesTest do
     :ok = RePG2.join(:test_group, self())
     assert_group_membership(:test_group, self())
 
-    ClusterUtil.restart_other_node()
+    ClusterUtil.restart_other_node(:repg2)
     # Wait for newly created remote pg2 to sync
     Process.sleep(1_000)
 
@@ -46,7 +46,7 @@ defmodule RePG2.MultiNodesTest do
 
     assert_group_membership(:test_group, remote_pid)
 
-    ClusterUtil.restart_this_node()
+    ClusterUtil.restart_cur_node(:repg2)
     Process.sleep(1_000)
 
     assert_group_membership(:test_group, remote_pid)

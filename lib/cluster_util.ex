@@ -5,22 +5,22 @@ defmodule ClusterUtil do
     _pid = Node.spawn(Cluster.other_node(), Process, :sleep, [:infinity])
   end
 
-  def restart_cluster() do
+  def restart_cluster(app) do
     for cmd <- [:stop, :start] do
       for cur_node <- [node(), Cluster.other_node()] do
-        :rpc.call(cur_node, Application, cmd, [:repg2])
+        :rpc.call(cur_node, Application, cmd, [app])
       end
     end
 
     :ok
   end
 
-  def restart_other_node() do
-    Cluster.rpc_other_node(__MODULE__, :restart_this_node, [])
+  def restart_other_node(app) do
+    Cluster.rpc_other_node(__MODULE__, :restart_cur_node, [app])
   end
 
-  def restart_this_node() do
-    :ok = Application.stop(:repg2)
-    :ok = Application.start(:repg2)
+  def restart_cur_node(app) do
+    :ok = Application.stop(app)
+    :ok = Application.start(app)
   end
 end

@@ -5,7 +5,7 @@ defmodule RePG2.SingleNodeTest do
   doctest RePG2
 
   setup do
-    ClusterUtil.restart_this_node()
+    ClusterUtil.restart_cur_node(:repg2)
   end
 
   test "initial state" do

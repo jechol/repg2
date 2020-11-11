@@ -6,7 +6,7 @@ defmodule RePG2.NodeDownTest do
   alias ClusterUtil
 
   setup do
-    ClusterUtil.restart_cluster()
+    ClusterUtil.restart_cluster(:repg2)
     :ok
   end
 
